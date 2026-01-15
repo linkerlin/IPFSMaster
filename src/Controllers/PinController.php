@@ -15,6 +15,20 @@ class PinController extends Controller {
             'pins' => $pins
         ]);
     }
+
+    public function table() {
+        $db = Database::getInstance();
+        $result = $db->query("SELECT * FROM pins ORDER BY pinned_at DESC");
+
+        $pins = [];
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            $pins[] = $row;
+        }
+
+        $this->renderPartial('partials/pins_table', [
+            'pins' => $pins
+        ]);
+    }
     
     public function add() {
         if ($this->isPost()) {
@@ -23,9 +37,15 @@ class PinController extends Controller {
             
             try {
                 $ipfs = new IPFSClient();
+                $db = Database::getInstance();
+                $recursivePin = $db->getSetting('recursive_pin', '1') === '1';
                 
                 // Recursively pin the CID
-                $ipfs->recursivePin($cid);
+                if ($recursivePin) {
+                    $ipfs->recursivePin($cid);
+                } else {
+                    $ipfs->pinAdd($cid, false);
+                }
                 
                 // Get object stats
                 $stat = null;
@@ -36,13 +56,19 @@ class PinController extends Controller {
                 }
                 
                 // Save to database
-                $db = Database::getInstance();
                 $stmt = $db->prepare("INSERT OR REPLACE INTO pins (cid, name, size, type, metadata) VALUES (:cid, :name, :size, :type, :metadata)");
                 $stmt->bindValue(':cid', $cid, SQLITE3_TEXT);
                 $stmt->bindValue(':name', $name, SQLITE3_TEXT);
                 $stmt->bindValue(':size', $stat ? $stat['CumulativeSize'] : 0, SQLITE3_INTEGER);
-                $stmt->bindValue(':type', 'recursive', SQLITE3_TEXT);
+                $stmt->bindValue(':type', $recursivePin ? 'recursive' : 'direct', SQLITE3_TEXT);
                 $stmt->bindValue(':metadata', json_encode($stat), SQLITE3_TEXT);
+                $stmt->execute();
+
+                $stmt = $db->prepare("INSERT INTO import_history (cid, source_path, import_type, status, completed_at) VALUES (:cid, :source, :type, :status, CURRENT_TIMESTAMP)");
+                $stmt->bindValue(':cid', $cid, SQLITE3_TEXT);
+                $stmt->bindValue(':source', $name ?: $cid, SQLITE3_TEXT);
+                $stmt->bindValue(':type', 'cid', SQLITE3_TEXT);
+                $stmt->bindValue(':status', 'completed', SQLITE3_TEXT);
                 $stmt->execute();
                 
                 if ($this->isHtmx()) {
@@ -77,13 +103,19 @@ class PinController extends Controller {
                 $stmt->execute();
                 
                 if ($this->isHtmx()) {
-                    $this->json(['success' => true, 'message' => 'Pin removed successfully']);
+                    $this->htmxTrigger('toast', ['message' => 'Pin已成功移除', 'type' => 'success']);
+                    $this->renderPartial('partials/pins_table', [
+                        'pins' => $this->fetchPins()
+                    ]);
                 } else {
                     $this->redirect('/pins');
                 }
             } catch (Exception $e) {
                 if ($this->isHtmx()) {
-                    $this->json(['success' => false, 'error' => $e->getMessage()], 400);
+                    $this->htmxTrigger('toast', ['message' => $e->getMessage(), 'type' => 'danger']);
+                    $this->renderPartial('partials/pins_table', [
+                        'pins' => $this->fetchPins()
+                    ]);
                 } else {
                     $this->redirect('/pins?error=' . urlencode($e->getMessage()));
                 }
@@ -117,5 +149,17 @@ class PinController extends Controller {
         } catch (Exception $e) {
             $this->redirect('/pins?error=' . urlencode($e->getMessage()));
         }
+    }
+
+    private function fetchPins() {
+        $db = Database::getInstance();
+        $result = $db->query("SELECT * FROM pins ORDER BY pinned_at DESC");
+
+        $pins = [];
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            $pins[] = $row;
+        }
+
+        return $pins;
     }
 }

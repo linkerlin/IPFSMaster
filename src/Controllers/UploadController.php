@@ -15,23 +15,34 @@ class UploadController extends Controller {
             
             try {
                 $ipfs = new IPFSClient();
+                $db = Database::getInstance();
+                $autoPin = $db->getSetting('auto_pin', '1') === '1';
+                $recursivePin = $db->getSetting('recursive_pin', '1') === '1';
+
                 $tmpFile = $_FILES['file']['tmp_name'];
                 $filename = $_FILES['file']['name'];
                 
                 // Add file to IPFS
-                $result = $ipfs->add($tmpFile, $filename);
+                $result = $ipfs->add($tmpFile, $filename, $autoPin);
+                if (!$result || !isset($result['Hash'])) {
+                    throw new Exception('IPFS add failed');
+                }
                 $cid = $result['Hash'];
-                
-                // The file is already pinned by default in add()
-                
-                // Save to database
-                $db = Database::getInstance();
-                $stmt = $db->prepare("INSERT OR REPLACE INTO pins (cid, name, size, type) VALUES (:cid, :name, :size, :type)");
-                $stmt->bindValue(':cid', $cid, SQLITE3_TEXT);
-                $stmt->bindValue(':name', $filename, SQLITE3_TEXT);
-                $stmt->bindValue(':size', $result['Size'] ?? 0, SQLITE3_INTEGER);
-                $stmt->bindValue(':type', 'recursive', SQLITE3_TEXT);
-                $stmt->execute();
+
+                if ($autoPin) {
+                    if ($recursivePin) {
+                        $ipfs->recursivePin($cid);
+                    } else {
+                        $ipfs->pinAdd($cid, false);
+                    }
+
+                    $stmt = $db->prepare("INSERT OR REPLACE INTO pins (cid, name, size, type) VALUES (:cid, :name, :size, :type)");
+                    $stmt->bindValue(':cid', $cid, SQLITE3_TEXT);
+                    $stmt->bindValue(':name', $filename, SQLITE3_TEXT);
+                    $stmt->bindValue(':size', $result['Size'] ?? 0, SQLITE3_INTEGER);
+                    $stmt->bindValue(':type', $recursivePin ? 'recursive' : 'direct', SQLITE3_TEXT);
+                    $stmt->execute();
+                }
                 
                 // Add to history
                 $stmt = $db->prepare("INSERT INTO import_history (cid, source_path, import_type, status, completed_at) VALUES (:cid, :source, :type, :status, CURRENT_TIMESTAMP)");
@@ -67,28 +78,37 @@ class UploadController extends Controller {
             
             try {
                 $ipfs = new IPFSClient();
-                $results = $ipfs->addDirectory($folderPath);
-                
                 $db = Database::getInstance();
-                
-                foreach ($results as $result) {
-                    if (isset($result['Hash'])) {
-                        $cid = $result['Hash'];
-                        $name = $result['Name'] ?? basename($folderPath);
-                        
-                        // Save to database
-                        $stmt = $db->prepare("INSERT OR REPLACE INTO pins (cid, name, size, type) VALUES (:cid, :name, :size, :type)");
-                        $stmt->bindValue(':cid', $cid, SQLITE3_TEXT);
-                        $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-                        $stmt->bindValue(':size', $result['Size'] ?? 0, SQLITE3_INTEGER);
-                        $stmt->bindValue(':type', 'recursive', SQLITE3_TEXT);
-                        $stmt->execute();
-                    }
-                }
-                
-                $mainCid = end($results)['Hash'] ?? null;
+                $autoPin = $db->getSetting('auto_pin', '1') === '1';
+                $recursivePin = $db->getSetting('recursive_pin', '1') === '1';
+
+                $results = $ipfs->addDirectory($folderPath, $autoPin);
+                $mainCid = !empty($results) ? (end($results)['Hash'] ?? null) : null;
+                $rootName = basename($folderPath);
                 
                 if ($mainCid) {
+                    if ($autoPin) {
+                        if ($recursivePin) {
+                            $ipfs->recursivePin($mainCid);
+                        } else {
+                            $ipfs->pinAdd($mainCid, false);
+                        }
+
+                        $stat = null;
+                        try {
+                            $stat = $ipfs->objectStat($mainCid);
+                        } catch (Exception $e) {
+                            $stat = null;
+                        }
+
+                        $stmt = $db->prepare("INSERT OR REPLACE INTO pins (cid, name, size, type) VALUES (:cid, :name, :size, :type)");
+                        $stmt->bindValue(':cid', $mainCid, SQLITE3_TEXT);
+                        $stmt->bindValue(':name', $rootName, SQLITE3_TEXT);
+                        $stmt->bindValue(':size', $stat ? $stat['CumulativeSize'] : 0, SQLITE3_INTEGER);
+                        $stmt->bindValue(':type', $recursivePin ? 'recursive' : 'direct', SQLITE3_TEXT);
+                        $stmt->execute();
+                    }
+
                     // Add to history
                     $stmt = $db->prepare("INSERT INTO import_history (cid, source_path, import_type, status, completed_at) VALUES (:cid, :source, :type, :status, CURRENT_TIMESTAMP)");
                     $stmt->bindValue(':cid', $mainCid, SQLITE3_TEXT);

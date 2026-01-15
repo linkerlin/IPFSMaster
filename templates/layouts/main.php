@@ -89,34 +89,58 @@
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #546e7a 0%, #607d8b 100%);
             color: white;
             border-radius: 15px;
             padding: 1.5rem;
             margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
         
         .stat-card.blue {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         }
         
         .stat-card.green {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
         }
         
-        .stat-card.orange {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        .stat-card.indigo {
+            background: linear-gradient(135deg, #283593 0%, #3949ab 100%);
+        }
+        
+        .stat-card.teal {
+            background: linear-gradient(135deg, #00695c 0%, #00897b 100%);
         }
         
         .stat-value {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            margin: 0.5rem 0;
+            margin: 0.8rem 0 0.3rem 0;
+            line-height: 1.2;
         }
         
         .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
+            font-size: 0.95rem;
+            opacity: 0.95;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+        
+        .stat-label i {
+            font-size: 1.1rem;
+            margin-right: 0.4rem;
+            vertical-align: middle;
         }
         
         .cid-badge {

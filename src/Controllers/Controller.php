@@ -42,4 +42,9 @@ class Controller {
     protected function isHtmx() {
         return isset($_SERVER['HTTP_HX_REQUEST']);
     }
+
+    protected function htmxTrigger($name, $payload = null) {
+        $data = $payload === null ? true : $payload;
+        header('HX-Trigger: ' . json_encode([$name => $data], JSON_UNESCAPED_UNICODE));
+    }
 }

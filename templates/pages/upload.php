@@ -11,7 +11,7 @@
                 <i class="bi bi-file-earmark-arrow-up"></i> 上传文件
             </div>
             <div class="card-body">
-                <form id="uploadFileForm" hx-post="/upload/file" hx-encoding="multipart/form-data" hx-target="#uploadResult">
+                <form id="uploadFileForm" hx-post="/upload/file" hx-encoding="multipart/form-data" hx-target="#uploadResult" hx-swap="none">
                     <div class="upload-zone" id="fileDropZone">
                         <i class="bi bi-cloud-upload display-1 text-primary"></i>
                         <h4 class="mt-3">拖放文件到这里</h4>
@@ -34,6 +34,26 @@
                 <div id="uploadResult" class="mt-3"></div>
             </div>
         </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-folder-symlink"></i> 导入本地文件夹
+            </div>
+            <div class="card-body">
+                <form hx-post="/upload/folder" hx-target="#folderResult" hx-swap="none">
+                    <div class="mb-3">
+                        <label for="folderPath" class="form-label">本地文件夹路径</label>
+                        <input type="text" class="form-control" id="folderPath" name="folder_path"
+                               placeholder="例如：C:\\data\\my-folder" required>
+                        <div class="form-text">服务器本地路径。导入后将自动递归Pin。</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-folder-plus"></i> 导入并Pin到IPFS
+                    </button>
+                </form>
+                <div id="folderResult" class="mt-3"></div>
+            </div>
+        </div>
     </div>
     
     <div class="col-md-6">
@@ -42,7 +62,7 @@
                 <i class="bi bi-folder-plus"></i> 导入CID
             </div>
             <div class="card-body">
-                <form hx-post="/pins/add" hx-target="#cidResult">
+                <form hx-post="/pins/add" hx-target="#cidResult" hx-swap="none">
                     <div class="mb-3">
                         <label for="cidInput" class="form-label">IPFS CID</label>
                         <input type="text" class="form-control" id="cidInput" name="cid" 
@@ -142,11 +162,13 @@
                     showToast('操作成功！内容已Pin到IPFS', 'success');
                     
                     if (response.cid) {
+                        const filesInfo = response.files_count ? `<p class="mb-2"><strong>文件数:</strong> ${response.files_count}</p>` : '';
                         const resultHtml = `
                             <div class="alert alert-success">
                                 <h6><i class="bi bi-check-circle"></i> 上传成功！</h6>
                                 <p class="mb-2"><strong>CID:</strong></p>
                                 <div class="cid-badge mb-2">${response.cid}</div>
+                                ${filesInfo}
                                 ${response.gateway_url ? `
                                     <a href="${response.gateway_url}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
                                         <i class="bi bi-box-arrow-up-right"></i> 在网关中查看

@@ -57,6 +57,7 @@ class IPFSClient {
     
     private function testGateway($gateway) {
         $ch = curl_init($gateway . '/api/v0/version');
+        curl_setopt($ch, CURLOPT_POST, true); // IPFS API 要求使用 POST
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 2);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
@@ -64,13 +65,16 @@ class IPFSClient {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
-        return $httpCode === 200 || $httpCode === 404; // 404 is ok for gateway root
+        return $httpCode === 200;
     }
     
     private function apiCall($endpoint, $params = [], $files = []) {
         $url = $this->rpcUrl . '/api/v0/' . $endpoint;
         
         $ch = curl_init();
+        
+        // IPFS API requires POST for all endpoints
+        curl_setopt($ch, CURLOPT_POST, true);
         
         if (!empty($params) || !empty($files)) {
             $postData = [];
@@ -86,8 +90,10 @@ class IPFSClient {
                 }
             }
             
-            curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        } else {
+            // Even for requests without params, we need to set POSTFIELDS to ensure POST method
+            curl_setopt($ch, CURLOPT_POSTFIELDS, []);
         }
         
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -110,6 +116,66 @@ class IPFSClient {
         
         return json_decode($response, true);
     }
+
+    private function apiCallRaw($endpoint, $params = [], $files = []) {
+        $url = $this->rpcUrl . '/api/v0/' . $endpoint;
+
+        $ch = curl_init();
+
+        // IPFS API requires POST for all endpoints
+        curl_setopt($ch, CURLOPT_POST, true);
+
+        if (!empty($params) || !empty($files)) {
+            $postData = [];
+            foreach ($params as $key => $value) {
+                $postData[$key] = $value;
+            }
+
+            foreach ($files as $key => $file) {
+                $postData[$key] = $file;
+            }
+
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        } else {
+            // Even for requests without params, we need to set POSTFIELDS to ensure POST method
+            curl_setopt($ch, CURLOPT_POSTFIELDS, []);
+        }
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 300);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            throw new Exception("IPFS API Error: " . $error);
+        }
+
+        if ($httpCode !== 200) {
+            throw new Exception("IPFS API returned HTTP $httpCode: $response");
+        }
+
+        return $response;
+    }
+
+    private function parseJsonLines($response) {
+        $lines = preg_split('/\r?\n/', trim($response));
+        $items = [];
+        foreach ($lines as $line) {
+            if ($line === '') {
+                continue;
+            }
+            $decoded = json_decode($line, true);
+            if (is_array($decoded)) {
+                $items[] = $decoded;
+            }
+        }
+        return $items;
+    }
     
     public function version() {
         return $this->apiCall('version');
@@ -119,30 +185,40 @@ class IPFSClient {
         return $this->apiCall('id');
     }
     
-    public function add($filePath, $filename = null) {
+    public function add($filePath, $filename = null, $pin = true) {
         if ($filename === null) {
             $filename = basename($filePath);
         }
         
-        $result = $this->apiCall('add', ['pin' => 'true'], [
-            'file' => ['path' => $filePath, 'name' => $filename]
+        $file = new CURLFile($filePath, 'application/octet-stream', $filename);
+        $response = $this->apiCallRaw('add', ['pin' => $pin ? 'true' : 'false'], [
+            'file' => $file
         ]);
-        
-        return $result;
+
+        $items = $this->parseJsonLines($response);
+        return !empty($items) ? end($items) : null;
     }
     
-    public function addDirectory($dirPath) {
-        // For directory uploads, we need to handle recursively
+    public function addDirectory($dirPath, $pin = true) {
         $files = $this->scanDirectory($dirPath);
-        $results = [];
-        
-        foreach ($files as $file) {
-            $relativePath = str_replace($dirPath . '/', '', $file);
-            $result = $this->add($file, $relativePath);
-            $results[] = $result;
+        if (empty($files)) {
+            throw new Exception('Folder is empty');
         }
-        
-        return $results;
+        $postFiles = [];
+
+        foreach ($files as $index => $file) {
+            $relativePath = str_replace($dirPath . DIRECTORY_SEPARATOR, '', $file);
+            $relativePath = str_replace(DIRECTORY_SEPARATOR, '/', $relativePath);
+            $postFiles['file' . $index] = new CURLFile($file, 'application/octet-stream', $relativePath);
+        }
+
+        $response = $this->apiCallRaw('add', [
+            'recursive' => 'true',
+            'wrap-with-directory' => 'true',
+            'pin' => $pin ? 'true' : 'false'
+        ], $postFiles);
+
+        return $this->parseJsonLines($response);
     }
     
     private function scanDirectory($dir) {
@@ -201,6 +277,14 @@ class IPFSClient {
     
     public function getGatewayUrl($cid) {
         return $this->gatewayUrl . '/ipfs/' . $cid;
+    }
+
+    public function statsRepo() {
+        return $this->apiCall('repo/stat');
+    }
+
+    public function statsBw() {
+        return $this->apiCall('stats/bw');
     }
     
     public function recursivePin($cid) {

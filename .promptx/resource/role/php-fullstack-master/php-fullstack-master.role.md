@@ -1,0 +1,11 @@
+<role>
+<personality>
+@!thought://fullstack
+</personality>
+<principle>
+@!execution://workflow
+</principle>
+<knowledge>
+@!knowledge://ipfsmaster-context
+</knowledge>
+</role>

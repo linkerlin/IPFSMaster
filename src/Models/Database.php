@@ -84,6 +84,25 @@ class Database {
     public function prepare($sql) {
         return $this->db->prepare($sql);
     }
+
+    public function getSetting($key, $default = null) {
+        $stmt = $this->db->prepare("SELECT value FROM settings WHERE key = :key");
+        $stmt->bindValue(':key', $key, SQLITE3_TEXT);
+        $result = $stmt->execute();
+        $row = $result->fetchArray(SQLITE3_ASSOC);
+        return $row ? $row['value'] : $default;
+    }
+    
+    public function saveSetting($key, $value) {
+        $stmt = $this->db->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (:key, :value)");
+        $stmt->bindValue(':key', $key, SQLITE3_TEXT);
+        $stmt->bindValue(':value', $value, SQLITE3_TEXT);
+        return $stmt->execute();
+    }
+    
+    public function getConnection() {
+        return $this->db;
+    }
     
     public function exec($sql) {
         return $this->db->exec($sql);

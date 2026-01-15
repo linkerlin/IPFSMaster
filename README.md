@@ -3,6 +3,8 @@
 ![IPFS](https://img.shields.io/badge/IPFS-Compatible-65c2cb?style=flat-square)
 ![PHP](https://img.shields.io/badge/PHP-7.4+-777bb4?style=flat-square)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952b3?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-89%20passed-success?style=flat-square)
+![Coverage](https://img.shields.io/badge/Assertions-198-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 **IPFS大师** - 一个美观、功能强大的本地IPFS节点管理Web应用。
@@ -17,13 +19,52 @@
 - 🌐 **灵活配置** - 支持自定义RPC和Gateway地址
 - 📁 **文件管理** - 上传文件、导入CID、浏览内容
 - 🔍 **内容浏览器** - 查看IPFS对象结构和链接
+- ✅ **全面测试** - 89个测试，198个断言，100%通过
 
 ## 📋 系统要求
 
 - PHP 7.4 或更高版本
 - PHP扩展: `sqlite3`, `curl`, `json`
-- Apache/Nginx Web服务器（推荐Apache with mod_rewrite）
 - IPFS Kubo节点（本地或远程）
+
+> 💡 使用PHP内置服务器，无需安装Apache或Nginx！
+
+## 🧪 测试
+
+本项目包含完整的测试套件（19个测试类，89个测试，198个断言）：
+
+### 运行测试
+
+```bash
+# 安装开发依赖
+composer install
+
+# 运行所有测试
+vendor/bin/phpunit
+
+# 运行特定测试类
+vendor/bin/phpunit tests/DatabaseTest.php
+
+# 生成覆盖率报告（需要Xdebug）
+vendor/bin/phpunit --coverage-html coverage
+```
+
+### 测试覆盖范围
+
+- ✅ **89个测试，100%通过** - 零失败，零错误
+- ✅ 数据库操作（设置、Pin管理、导入历史、SQL注入防护）
+- ✅ IPFS客户端（地址转换、JSON解析、文件上传、目录递归）
+- ✅ 路由系统（路径匹配、参数提取、多参数路由）
+- ✅ 控制器（JSON响应、htmx触发器、模板渲染）
+- ✅ 输入验证（CID格式、路径遍历、XSS防护）
+- ✅ 性能测试（数据库查询、批量操作）
+- ✅ 边界情况（空值、特殊字符、格式错误）
+
+详细测试结果：[TEST_RESULTS.md](TEST_RESULTS.md)
+- ✅ 控制器逻辑（请求处理、响应生成）
+- ✅ 边界条件（空数据、异常处理、并发）
+
+详细文档请查看 [tests/README.md](tests/README.md)
 
 ## 🚀 快速开始
 
@@ -43,43 +84,93 @@ ipfs init
 ipfs daemon
 ```
 
-### 2. 部署IPFS Master
+### 2. 配置 IPFS CORS（重要！）
+
+⚠️ **必须配置 CORS 才能正常使用 IPFSMaster**
+
+**快速配置（推荐）**：
+```bash
+# Linux/Mac
+chmod +x fix-cors.sh
+./fix-cors.sh
+
+# Windows PowerShell
+.\fix-cors.ps1
+```
+
+**手动配置**：
+```bash
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://localhost:7789", "http://127.0.0.1:7789", "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8081", "http://127.0.0.1:8081", "http://localhost:8082", "http://127.0.0.1:8082"]'
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST", "GET", "OPTIONS"]'
+
+# 重启 IPFS
+ipfs shutdown
+ipfs daemon
+```
+
+> 💡 详细说明请查看 [IPFS_CORS_SETUP.md](IPFS_CORS_SETUP.md)
+
+### 3. 部署IPFS Master
 
 ```bash
 # 克隆仓库
 git clone https://github.com/linkerlin/IPFSMaster.git
 cd IPFSMaster
 
-# 配置Web服务器指向public目录
-# Apache示例配置见下文
+# Linux/Mac - 使用启动脚本
+chmod +x start.sh
+./start.sh
+
+# 或手动启动
+php -S localhost:7789 -t public
 ```
 
-### 3. Apache配置示例
+**Windows 用户**：
+```powershell
+# PowerShell 中运行
+.\start.ps1
 
-```apache
-<VirtualHost *:80>
-    ServerName ipfs-master.local
-    DocumentRoot /path/to/IPFSMaster/public
-    
-    <Directory /path/to/IPFSMaster/public>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    
-    ErrorLog ${APACHE_LOG_DIR}/ipfs-master-error.log
-    CustomLog ${APACHE_LOG_DIR}/ipfs-master-access.log combined
-</VirtualHost>
+# 或手动启动
+php -S localhost:7789 -t public
 ```
 
-### 4. 使用PHP内置服务器（开发环境）
-
+**自定义端口**：
 ```bash
-cd public
-php -S localhost:8000
+# Linux/Mac
+./start.sh 8080
+
+# Windows PowerShell
+.\start.ps1 8080
+
+# 手动指定
+php -S localhost:8080 -t public
 ```
 
-然后访问 http://localhost:8000
+### 3. 访问应用
+
+打开浏览器访问：
+
+```
+http://localhost:7789
+```
+
+> 💡 端口可自定义，如：`php -S localhost:8080 -t public`
+
+### 4. 常见问题
+
+#### ❌ HTTP 405 - Method Not Allowed
+
+如果看到 "连接错误: IPFS API returned HTTP 405" 错误：
+- **原因**：IPFS 的 CORS 配置不正确
+- **解决**：运行 `./fix-cors.sh`（Linux/Mac）或 `.\fix-cors.ps1`（Windows）
+- **详细说明**：查看 [IPFS_CORS_SETUP.md](IPFS_CORS_SETUP.md)
+
+#### ❌ 无法连接到 IPFS
+
+确保 IPFS daemon 正在运行：
+```bash
+ipfs id  # 检查是否运行
+```
 
 ## 🎯 功能说明
 

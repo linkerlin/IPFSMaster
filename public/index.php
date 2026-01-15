@@ -30,6 +30,7 @@ $router = new Router();
 
 // Define routes
 $router->get('/', [HomeController::class, 'index']);
+$router->get('/dashboard/stats', [HomeController::class, 'stats']);
 
 // Upload routes
 $router->get('/upload', [UploadController::class, 'index']);
@@ -38,6 +39,7 @@ $router->post('/upload/folder', [UploadController::class, 'folder']);
 
 // Pin routes
 $router->get('/pins', [PinController::class, 'index']);
+$router->get('/pins/table', [PinController::class, 'table']);
 $router->post('/pins/add', [PinController::class, 'add']);
 $router->post('/pins/remove', [PinController::class, 'remove']);
 $router->get('/pins/sync', [PinController::class, 'sync']);

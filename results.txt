@@ -1,0 +1,125 @@
+Browse Controller
+ [x] Controller exists
+
+Controller Render
+ [x] Render partial does not throw
+ [x] Json response format
+ [x] Htmx trigger header
+ [x] Get get returns correct value
+
+Database Edge Case
+ [x] Insert duplicate pin uses replace
+ [x] Get setting with null default
+ [x] Get setting with empty string
+ [x] Large pin insert batch
+ [x] Import history with null fields
+ [x] Setting timestamp updates
+ [x] Special characters in data
+
+Database Integration
+ [x] Insert and retrieve pin
+ [x] Insert import history
+ [x] Delete pin
+ [x] Update setting
+
+Database
+ [x] Get setting returns default when missing
+ [x] Get setting returns stored value
+ [x] Default settings exist
+
+Edge Case
+ [x] I p f s client constructor with default settings
+ [x] I p f s client constructor with custom settings
+ [x] Database singleton pattern
+ [x] Router handles trailing slash
+ [x] I p f s gateway url generation
+ [x] Controller json response
+ [x] Empty pins list
+ [x] Parse json lines with empty string
+ [x] Scan directory with nested structure
+
+Error Handling
+ [x] Database query error does not crash
+ [x] Empty result handling
+ [x] Null value handling
+ [x] Invalid controller method handling
+ [x] I p f s client with invalid configuration
+ [x] Router with no routes
+ [x] Parse json lines with invalid json
+ [x] Get setting with database error
+ [x] Controller redirect does not execute further code
+ [x] Json response with special characters
+
+Home Controller
+ [x] Index method exists
+ [x] Stats method exists
+
+IPFSClient Advanced
+ [x] Get rpc url returns configured url
+ [x] Get gateway base url returns configured url
+ [x] Get gateway url formats correctly
+ [x] Multi addr conversion variants
+ [x] Scan directory ignores dot files
+ [x] Parse json lines with malformed json
+ [x] Parse json lines with empty lines
+
+IPFSClient
+ [x] Convert multi addr to http
+ [x] Parse json lines
+ [x] Add directory empty throws
+
+Performance
+ [x] Database query performance
+ [x] Prepared statement reuse
+ [x] Large pins list
+ [x] Json parsing performance
+
+Pin Controller
+ [x] Fetch pins returns array
+
+Router Advanced
+ [x] Multiple parameters in path
+ [x] Parameter with hyphen
+ [x] Path with query string
+ [x] Multiple routes with same method
+ [x] Mixed get and post routes
+ [x] Parameter match does not match slash
+ [x] Empty path matching
+ [x] Controller array handler
+ [x] Callable handler
+
+Router
+ [x] Add get route
+ [x] Add post route
+ [x] Match path simple
+ [x] Match path with parameter
+ [x] Match path no match
+
+Security
+ [x] Html escaping in templates
+ [x] Sql injection prevention
+ [x] Cid validation
+ [x] Path traversal prevention
+ [x] Database escaping
+
+Settings Controller
+ [x] Index loads settings
+
+Upload Controller
+ [x] Is post returns false for get
+ [x] Is post returns true for post
+ [x] Is htmx detects header
+ [x] Get post returns default
+ [x] Get post returns value
+
+Validation
+ [x] Cid format validation
+ [x] File name sanitization
+ [x] Html escaping
+ [x] Url validation
+ [x] Integer validation
+ [x] Multi addr format validation
+ [x] Directory path validation
+ [x] Pin type validation
+ [x] Status validation
+
