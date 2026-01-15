@@ -1,25 +1,19 @@
-# CakePHP 3
+# Database
+/database/*.db
+/database/*.db-journal
 
-/vendor/*
-/config/app.php
+# Temporary files
+/tmp/*
 
-/tmp/cache/models/*
-!/tmp/cache/models/empty
-/tmp/cache/persistent/*
-!/tmp/cache/persistent/empty
-/tmp/cache/views/*
-!/tmp/cache/views/empty
-/tmp/sessions/*
-!/tmp/sessions/empty
-/tmp/tests/*
-!/tmp/tests/empty
-
+# Logs
 /logs/*
-!/logs/empty
 
-# CakePHP 2
+# OS files
+.DS_Store
+Thumbs.db
 
-/app/tmp/*
-/app/Config/core.php
-/app/Config/database.php
-/vendors/*
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
