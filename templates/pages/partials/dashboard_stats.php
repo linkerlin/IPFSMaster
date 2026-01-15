@@ -62,11 +62,20 @@
                         </tr>
                         <tr>
                             <th>协议版本</th>
-                            <td><?php echo htmlspecialchars($nodeInfo['ProtocolVersion'] ?? 'N/A'); ?></td>
+                            <td><?php echo htmlspecialchars($nodeInfo['AgentVersion'] ?? 'N/A'); ?></td>
                         </tr>
                         <tr>
-                            <th>代理版本</th>
-                            <td><?php echo htmlspecialchars($nodeInfo['AgentVersion'] ?? 'N/A'); ?></td>
+                            <th>支持协议</th>
+                            <td>
+                                <?php 
+                                $protocols = $nodeInfo['Protocols'] ?? [];
+                                $mainProtocols = array_filter($protocols, function($p) {
+                                    return strpos($p, '/ipfs/') === 0 && strpos($p, 'bitswap') === false;
+                                });
+                                echo htmlspecialchars(implode(', ', array_slice($mainProtocols, 0, 3)) ?: 'N/A');
+                                if (count($mainProtocols) > 3) echo '...';
+                                ?>
+                            </td>
                         </tr>
                         <tr>
                             <th>RPC地址</th>
