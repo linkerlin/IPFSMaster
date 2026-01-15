@@ -100,6 +100,8 @@ class IPFSClient {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Expect:']);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -119,32 +121,27 @@ class IPFSClient {
 
     private function apiCallRaw($endpoint, $params = [], $files = [], $timeout = 60) {
         $url = $this->rpcUrl . '/api/v0/' . $endpoint;
+        
+        // Add params to URL query string
+        if (!empty($params)) {
+            $url .= '?' . http_build_query($params);
+        }
 
-        $ch = curl_init();
+        $ch = curl_init($url);
 
         // IPFS API requires POST for all endpoints
         curl_setopt($ch, CURLOPT_POST, true);
-
-        if (!empty($params) || !empty($files)) {
-            $postData = [];
-            foreach ($params as $key => $value) {
-                $postData[$key] = $value;
-            }
-
-            foreach ($files as $key => $file) {
-                $postData[$key] = $file;
-            }
-
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        } else {
-            // Even for requests without params, we need to set POSTFIELDS to ensure POST method
-            curl_setopt($ch, CURLOPT_POSTFIELDS, []);
-        }
-
-        curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Expect:']);
+
+        if (!empty($files)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $files);
+        } else {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, []);
+        }
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -197,6 +194,33 @@ class IPFSClient {
 
         $items = $this->parseJsonLines($response);
         return !empty($items) ? end($items) : null;
+    }
+
+    public function addFiles($files, $pin = true, $wrapWithDirectory = true) {
+        if (empty($files)) {
+            throw new Exception('No files to add');
+        }
+
+        $postFiles = [];
+        foreach ($files as $index => $file) {
+            if (empty($file['tmp_name']) || empty($file['name'])) {
+                continue;
+            }
+            $postFiles['file' . $index] = new CURLFile($file['tmp_name'], 'application/octet-stream', $file['name']);
+        }
+
+        if (empty($postFiles)) {
+            throw new Exception('No valid files to add');
+        }
+
+        $params = ['pin' => $pin ? 'true' : 'false'];
+        if ($wrapWithDirectory) {
+            $params['recursive'] = 'true';
+            $params['wrap-with-directory'] = 'true';
+        }
+
+        $response = $this->apiCallRaw('add', $params, $postFiles);
+        return $this->parseJsonLines($response);
     }
     
     public function addDirectory($dirPath, $pin = true) {

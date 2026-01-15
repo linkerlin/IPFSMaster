@@ -8,17 +8,21 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-file-earmark-arrow-up"></i> 上传文件
+                <i class="bi bi-file-earmark-arrow-up"></i> 上传文件和文件夹
             </div>
             <div class="card-body">
                 <form id="uploadFileForm" hx-post="/upload/file" hx-encoding="multipart/form-data" hx-target="#uploadResult" hx-swap="none">
                     <div class="upload-zone" id="fileDropZone">
                         <i class="bi bi-cloud-upload display-1 text-primary"></i>
                         <h4 class="mt-3">拖放文件到这里</h4>
-                        <p class="text-muted">或者点击选择文件</p>
-                        <input type="file" name="file" id="fileInput" class="d-none" required>
-                        <button type="button" class="btn btn-primary mt-3" onclick="document.getElementById('fileInput').click()">
+                        <p class="text-muted">或者点击选择文件/文件夹</p>
+                        <input type="file" name="file" id="fileInput" class="d-none">
+                        <input type="file" name="folder[]" id="folderInput" class="d-none" webkitdirectory directory multiple>
+                        <button type="button" class="btn btn-primary mt-3 me-2" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
                             <i class="bi bi-folder2-open"></i> 选择文件
+                        </button>
+                        <button type="button" class="btn btn-outline-primary mt-3" onclick="event.stopPropagation(); document.getElementById('folderInput').click()">
+                            <i class="bi bi-folder2"></i> 选择文件夹
                         </button>
                     </div>
                     <div id="selectedFile" class="mt-3 d-none">
@@ -32,26 +36,6 @@
                     </div>
                 </form>
                 <div id="uploadResult" class="mt-3"></div>
-            </div>
-        </div>
-
-        <div class="card mt-4">
-            <div class="card-header">
-                <i class="bi bi-folder-symlink"></i> 导入本地文件夹
-            </div>
-            <div class="card-body">
-                <form hx-post="/upload/folder" hx-target="#folderResult" hx-swap="none">
-                    <div class="mb-3">
-                        <label for="folderPath" class="form-label">本地文件夹路径</label>
-                        <input type="text" class="form-control" id="folderPath" name="folder_path"
-                               placeholder="例如：C:\\data\\my-folder" required>
-                        <div class="form-text">服务器本地路径。导入后将自动递归Pin。</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-folder-plus"></i> 导入并Pin到IPFS
-                    </button>
-                </form>
-                <div id="folderResult" class="mt-3"></div>
             </div>
         </div>
     </div>
@@ -112,10 +96,7 @@
     const fileInput = document.getElementById('fileInput');
     const selectedFile = document.getElementById('selectedFile');
     const fileName = document.getElementById('fileName');
-    
-    dropZone.addEventListener('click', function() {
-        fileInput.click();
-    });
+    const folderInput = document.getElementById('folderInput');
     
     dropZone.addEventListener('dragover', function(e) {
         e.preventDefault();
@@ -138,11 +119,28 @@
     });
     
     fileInput.addEventListener('change', function() {
+        if (fileInput.files.length > 0) {
+            folderInput.value = '';
+            folderInput.disabled = true;
+        }
+        showSelectedFile();
+    });
+
+    folderInput.addEventListener('change', function() {
+        if (folderInput.files.length > 0) {
+            fileInput.value = '';
+            fileInput.disabled = true;
+        }
         showSelectedFile();
     });
     
     function showSelectedFile() {
-        if (fileInput.files.length > 0) {
+        if (folderInput.files.length > 0) {
+            const firstPath = folderInput.files[0].webkitRelativePath || folderInput.files[0].name;
+            const rootName = firstPath.split('/')[0];
+            fileName.textContent = `${rootName}（文件夹，${folderInput.files.length} 个文件）`;
+            selectedFile.classList.remove('d-none');
+        } else if (fileInput.files.length > 0) {
             fileName.textContent = fileInput.files[0].name;
             selectedFile.classList.remove('d-none');
         }
@@ -150,6 +148,9 @@
     
     function clearFileSelection() {
         fileInput.value = '';
+        folderInput.value = '';
+        fileInput.disabled = false;
+        folderInput.disabled = false;
         selectedFile.classList.add('d-none');
     }
     
@@ -194,6 +195,28 @@
             } catch (e) {
                 console.error('Error parsing response:', e);
             }
+        }
+    });
+
+    document.body.addEventListener('htmx:responseError', function(event) {
+        let message = '上传失败';
+        try {
+            const response = JSON.parse(event.detail.xhr.responseText || '{}');
+            if (response.error) {
+                message = response.error;
+            }
+        } catch (e) {
+            // ignore parse errors
+        }
+
+        showToast(message, 'danger');
+
+        if (event.detail && event.detail.target) {
+            event.detail.target.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> ${message}
+                </div>
+            `;
         }
     });
 </script>
