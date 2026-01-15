@@ -4,11 +4,36 @@
     </div>
 </div>
 
-<div hx-get="/dashboard/stats" hx-trigger="load, every 10s" hx-swap="outerHTML">
-    <?php include __DIR__ . '/partials/dashboard_stats.php'; ?>
+<div id="dashboardStats" hx-get="/dashboard/stats" hx-trigger="load, every 10s" hx-swap="innerHTML">
+    <!-- IPFS stats loading via htmx -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card blue">
+                <div class="stat-label"><i class="bi bi-hdd-network"></i> 节点状态</div>
+                <div class="stat-value"><span class="spinner-border spinner-border-sm"></span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card indigo">
+                <div class="stat-label"><i class="bi bi-info-circle"></i> IPFS版本</div>
+                <div class="stat-value"><span class="spinner-border spinner-border-sm"></span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card teal">
+                <div class="stat-label"><i class="bi bi-pin-angle"></i> 已固定</div>
+                <div class="stat-value"><?php echo number_format((int)($pinnedCount ?? 0)); ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card green">
+                <div class="stat-label"><i class="bi bi-hdd"></i> 仓库占用</div>
+                <div class="stat-value"><span class="spinner-border spinner-border-sm"></span></div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<?php if (!$error): ?>
 <div class="row mt-4">
     <div class="col-md-6">
         <div class="card">
@@ -96,5 +121,4 @@
         </div>
     </div>
 </div>
-<?php endif; ?>
 

@@ -71,7 +71,7 @@
                 <?php endif; ?>
                 
                 <div class="mt-3">
-                    <a href="<?php echo htmlspecialchars($ipfs->getGatewayUrl($cid)); ?>" 
+                    <a href="<?php echo htmlspecialchars($ipfs->getGatewayUrl($cid, $pinName)); ?>" 
                        target="_blank" class="btn btn-primary">
                         <i class="bi bi-box-arrow-up-right"></i> 在网关中打开
                     </a>
@@ -127,7 +127,7 @@
                                            class="btn btn-outline-primary">
                                             <i class="bi bi-eye"></i> 查看
                                         </a>
-                                        <a href="<?php echo htmlspecialchars($ipfs->getGatewayUrl($link['Hash'])); ?>" 
+                                        <a href="<?php echo htmlspecialchars($ipfs->getGatewayUrl($link['Hash'], $link['Name'] ?? null)); ?>" 
                                            target="_blank" class="btn btn-outline-secondary">
                                             <i class="bi bi-download"></i> 下载
                                         </a>

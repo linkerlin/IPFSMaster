@@ -43,6 +43,7 @@ $router->get('/pins/table', [PinController::class, 'table']);
 $router->post('/pins/add', [PinController::class, 'add']);
 $router->post('/pins/remove', [PinController::class, 'remove']);
 $router->get('/pins/sync', [PinController::class, 'sync']);
+$router->get('/pins/task-status', [PinController::class, 'taskStatus']);
 
 // Browse routes
 $router->get('/browse', [BrowseController::class, 'view']);

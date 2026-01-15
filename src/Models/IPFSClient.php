@@ -68,7 +68,7 @@ class IPFSClient {
         return $httpCode === 200;
     }
     
-    private function apiCall($endpoint, $params = [], $files = []) {
+    private function apiCall($endpoint, $params = [], $files = [], $timeout = 15) {
         $url = $this->rpcUrl . '/api/v0/' . $endpoint;
         
         $ch = curl_init();
@@ -98,8 +98,8 @@ class IPFSClient {
         
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 300);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -117,7 +117,7 @@ class IPFSClient {
         return json_decode($response, true);
     }
 
-    private function apiCallRaw($endpoint, $params = [], $files = []) {
+    private function apiCallRaw($endpoint, $params = [], $files = [], $timeout = 60) {
         $url = $this->rpcUrl . '/api/v0/' . $endpoint;
 
         $ch = curl_init();
@@ -143,8 +143,8 @@ class IPFSClient {
 
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 300);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -275,8 +275,12 @@ class IPFSClient {
         return $this->apiCall('dag/get', ['arg' => $cid]);
     }
     
-    public function getGatewayUrl($cid) {
-        return $this->gatewayUrl . '/ipfs/' . $cid;
+    public function getGatewayUrl($cid, $filename = null) {
+        $url = $this->gatewayUrl . '/ipfs/' . $cid;
+        if ($filename !== null && $filename !== '') {
+            $url .= '?filename=' . rawurlencode($filename);
+        }
+        return $url;
     }
 
     public function statsRepo() {

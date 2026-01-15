@@ -13,7 +13,10 @@ class Database {
         }
         
         $this->db = new SQLite3($dbPath);
-        $this->db->busyTimeout(5000);
+        $this->db->busyTimeout(30000); // 30 seconds timeout
+        // Enable WAL mode for better concurrency
+        $this->db->exec('PRAGMA journal_mode=WAL');
+        $this->db->exec('PRAGMA synchronous=NORMAL');
         $this->initDatabase();
     }
     
@@ -55,6 +58,27 @@ class Database {
                 completed_at DATETIME,
                 error_message TEXT
             )
+        ");
+        
+        $this->db->exec("
+            CREATE TABLE IF NOT EXISTS background_tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_type TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                progress INTEGER DEFAULT 0,
+                total INTEGER DEFAULT 0,
+                current_item TEXT,
+                result TEXT,
+                error_message TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                started_at DATETIME,
+                completed_at DATETIME,
+                pid INTEGER
+            )
+        ");
+        
+        $this->db->exec("
+            CREATE INDEX IF NOT EXISTS idx_tasks_status ON background_tasks(status, created_at)
         ");
         
         // Initialize default settings if not exists

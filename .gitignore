@@ -1,19 +1,126 @@
-# Database
+# ===========================
+# Composer Dependencies
+# ===========================
+/vendor/
+composer.phar
+
+# ===========================
+# Database Files
+# ===========================
 /database/*.db
+/database/*.sqlite
+/database/*.sqlite3
 /database/*.db-journal
+/database/*.db-shm
+/database/*.db-wal
 
-# Temporary files
-/tmp/*
-
-# Logs
+# ===========================
+# Logs and Temporary Files
+# ===========================
 /logs/*
+!/logs/.gitkeep
+/tmp/*
+!/tmp/.gitkeep
+*.log
 
-# OS files
-.DS_Store
-Thumbs.db
+# ===========================
+# Environment & Configuration
+# ===========================
+.env
+.env.local
+.env.*.local
+config.local.php
+settings.local.php
 
-# IDE
-.vscode/
+# ===========================
+# IDE & Editor Files
+# ===========================
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# PhpStorm / IntelliJ IDEA
 .idea/
+*.iml
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ===========================
+# OS Generated Files
+# ===========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ===========================
+# Testing & Coverage
+# ===========================
+/tests/coverage/
+/.phpunit.cache/
+/.phpunit.result.cache
+/build/
+/coverage/
+coverage.xml
+clover.xml
+
+# ===========================
+# Cache & Build Files
+# ===========================
+/cache/*
+!/cache/.gitkeep
+/public/cache/*
+*.cache
+.sass-cache/
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ===========================
+# Backup Files
+# ===========================
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+
+# ===========================
+# Sensitive Information
+# ===========================
+*.pem
+*.key
+*.cert
+*.crt
+secrets.php
+credentials.php

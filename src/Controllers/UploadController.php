@@ -57,7 +57,7 @@ class UploadController extends Controller {
                     'cid' => $cid,
                     'name' => $filename,
                     'size' => $result['Size'] ?? 0,
-                    'gateway_url' => $ipfs->getGatewayUrl($cid)
+                    'gateway_url' => $ipfs->getGatewayUrl($cid, $filename)
                 ]);
             } catch (Exception $e) {
                 $this->json(['success' => false, 'error' => $e->getMessage()], 500);
